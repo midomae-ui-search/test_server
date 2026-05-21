@@ -1,13 +1,60 @@
+<<<<<<< HEAD
 import streamlit as st
 import sqlite3
 import pandas as pd
 
 # 1. 페이지 설정 및 디자인 적용
+=======
+import os
+import requests
+import base64
+import sqlite3
+import pandas as pd
+import streamlit as st
+
+# =========================================================
+# [자동 업데이트] 원드라이브로부터 최신 DB 다운로드 로직
+# =========================================================
+# # 1. 복사한 원드라이브 단축 링크 주소를 넣으세요.
+ONEDRIVE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQCCet6sZmwSTbs-ZicHiqIzAeyNOZxZvHCvZwy58kK74cI?e=AGYqea"
+DB_FILE = '상품검색 V4.db' 
+
+def download_onedrive_db():
+    # 단축 링크를 안전하게 직통 다운로드 주소로 변환하는 규격입니다.
+    # 1drv.ms 주소를 base64로 인코딩하여 api 주소를 생성합니다.
+    try:
+        data_bytes = ONEDRIVE_URL.encode("utf-8")
+        base64_bytes = base64.b64encode(data_bytes)
+        base64_string = base64_bytes.decode("utf-8").replace("=", "").replace("/", "_").replace("+", "-")
+        direct_url = f"https://onedrive.com!{base64_string}/root/content"
+
+        response = requests.get(direct_url, stream=True)
+        if response.status_code == 200:
+            with open(DB_FILE, "wb") as f:
+                f.write(response.content)
+            # Streamlit 화면에 방해되지 않도록 터미널에 로그를 남깁니다.
+            print("원드라이브로부터 최신 DB 다운로드 완료!")
+        else:
+            print(f"다운로드 실패 (상태 코드): {response.status_code}")
+    except Exception as e:
+        print(f"다운로드 실패: {e}")
+
+# 앱 실행 시 자동으로 DB 다운로드 트리거
+download_onedrive_db()
+
+# =========================================================
+# 1. 페이지 설정 및 디자인 적용
+# =========================================================
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
 st.set_page_config(page_title="상품 검색기", layout="wide")
 
 st.markdown("""
     <style>
+<<<<<<< HEAD
     /* 1. 기본 설정 (헤더/푸러 숨김 등) */
+=======
+    /* 1. 기본 설정 (헤더/푸터 숨김 등) */
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
     header, footer {visibility: hidden !important; display: none !important;}
     .stAppDeployButton, .viewerBadge_link__q6n6l, .viewerBadge_container__176p1, #MainMenu {
         display: none !important;
@@ -16,13 +63,21 @@ st.markdown("""
     .stApp { margin-top: 0px !important; }
     /* 1. 메인 컨테이너 자체를 더 위로 끌어올림 */
     [data-testid="stMainViewContainer"] {
+<<<<<<< HEAD
         margin-top: -60px !important; /* -45에서 -60으로 더 키워보세요 */
+=======
+        margin-top: -60px !important;
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
     }
 
     /* 2. 내부 콘텐츠 박스의 위쪽 여백을 강제로 '마이너스' 처리 */
     .block-container { 
         padding-top: 0rem !important; 
+<<<<<<< HEAD
         margin-top: -36px !important; /* 이 코드를 추가해서 내용물을 강제로 위로 붙입니다 */
+=======
+        margin-top: -36px !important;
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
         padding-bottom: 0rem !important; 
     }
 
@@ -33,6 +88,7 @@ st.markdown("""
     }
 
     /* 2. 초기화 X 버튼 (원형 고정) */
+<<<<<<< HEAD
     /* col_clear(3번째 컬럼)에 있는 버튼만 집어서 원형으로 만듭니다 */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #333333 !important;
@@ -40,6 +96,14 @@ st.markdown("""
         border-radius: 50% !important; /* 원형 */
         width: 40px !important;        /* 가로 고정 */
         height: 40px !important;       /* 세로 고정 */
+=======
+    div[data-testid="column"]:nth-of-type(3) button {
+        background-color: #333333 !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
         padding: 0 !important;
         border: none !important;
         display: flex !important;
@@ -60,7 +124,10 @@ st.markdown("""
         height: auto !important;
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
     /* 4. 모든 버튼 공통 호버 효과 */
     div.stButton > button:hover {
         background-color: #000000 !important;
@@ -77,19 +144,61 @@ st.markdown("""
         font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
     }
     .top-btn:hover { background-color: #f0f2f6; }
+<<<<<<< HEAD
     </style>
     """, unsafe_allow_html=True)
 
 
+=======
+    
+    /* 1. 모바일에서도 컬럼이 밑으로 떨어지지 않게 강제 가로 배치 */
+    [data-testid="column"] {
+        flex: 1 1 0% !important;
+        min-width: 0px !important;
+        padding-right: 5px !important;
+    }
+
+    /* 이미지와 텍스트 사이 간격 미세 조정 */
+    [data-testid="column"]:nth-of-type(1) {
+        padding-right: 10px !important;
+    }
+
+    /* 3. 라벨 숨겨서 위쪽 여백 제거 */
+    div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label {
+        display: none !important;
+    }
+
+    /* 4. 버튼 위치 수직 중앙 맞춤 */
+    div[data-testid="stButton"] {
+        margin-top: 0px !important;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* 5. 버튼 크기 조절 */
+    .stButton button {
+        width: auto !important;
+        padding: 2px 10px !important;
+        font-size: 12px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
 # 최상단 앵커 및 Top 버튼
 st.markdown('<div id="top"></div>', unsafe_allow_html=True)
 st.markdown('<a class="top-btn" href="#top">↑</a>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # [정보 설정] DB 및 테이블 정보
+<<<<<<< HEAD
 DB_FILE = '상품검색 V4.db' 
 TABLE_NAME = '"상품검색v4"' 
 # ---------------------------------------------------------
+=======
+# ---------------------------------------------------------
+TABLE_NAME = '"상품검색v4"' 
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
 
 def get_connection():
     try:
@@ -115,6 +224,7 @@ category_data = {
     "맨즈 벨트/잡화": "CATE139"
 }
 
+<<<<<<< HEAD
 # font-size를 24px 정도로 줄이고 간격을 조정합니다.
 st.markdown("<h2 style='font-size: 24px; margin-bottom: -20px;'>🔍 상품 검색기</h2>", unsafe_allow_html=True)
 
@@ -160,14 +270,23 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 
+=======
+# 타이틀 출력
+st.markdown("<h2 style='font-size: 24px; margin-bottom: -20px;'>🔍 상품 검색기</h2>", unsafe_allow_html=True)
+
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
 if "keyword_val" not in st.session_state:
     st.session_state.keyword_val = ""
 
 def clear_search():
     st.session_state.keyword_val = ""
 
+<<<<<<< HEAD
 # 컬럼 비율: 카테고리(1) : 검색어(2.2) : X버튼(0.5)
 # gap="small"을 주어 너무 붙지 않게 설정합니다.
+=======
+# 검색 바 레이아웃 구성
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
 col_cat, col_keyword, col_clear = st.columns([1, 2.2, 0.5], gap="small")
 
 with col_cat:
@@ -180,18 +299,29 @@ with col_keyword:
 with col_clear:
     st.button("X", on_click=clear_search)
 
+<<<<<<< HEAD
 # --- 여기까지 교체 ---
 
 st.markdown("""
     <div style="text-align: center; color: #ff4b4b; font-weight: bold; font-size: 17.5px;">
         ** 5/18 ~ 5/22 샤넬 브랜드 10% 할인 + 전품목 금액무관 카드결제 가능
                       
+=======
+# 상단 공지 배너
+st.markdown("""
+    <div style="text-align: center; color: #ff4b4b; font-weight: bold; font-size: 17.5px;">
+        ** 5/18 ~ 5/22 샤넬 브랜드 10% 할인 + 전품목 금액무관 카드결제 가능
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("<hr style='margin-top: 16px; margin-bottom: 10px; opacity: 0.2;'>", unsafe_allow_html=True)
 
+<<<<<<< HEAD
 # 5. 데이터 검색 및 출력 로직
+=======
+# 데이터 검색 및 출력 로직
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
 conn = get_connection()
 if conn:
     if 'load_count' not in st.session_state:
@@ -199,11 +329,17 @@ if conn:
 
     conditions = ['"판매상태" NOT IN ("숨김", "품절")']
 
+<<<<<<< HEAD
 
     if keyword:
         # 1. 브랜드 전용 검색 체크 (예: #삼성, #Apple)
         if keyword.startswith("#"):
             brand_k = keyword[1:].strip() # '#' 뒷부분만 추출
+=======
+    if keyword:
+        if keyword.startswith("#"):
+            brand_k = keyword[1:].strip()
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
             if brand_k:
                 conditions.append(f'"브랜드" LIKE "%{brand_k}%"')
         else:
@@ -217,7 +353,10 @@ if conn:
     where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
     
     try:
+<<<<<<< HEAD
         # 1. 데이터 가져오기 (들여쓰기 교정 완료)
+=======
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
         count_query = f'SELECT COUNT(*) FROM {TABLE_NAME} {where_clause}'
         total_count = pd.read_sql(count_query, conn).iloc[0, 0]
 
@@ -225,6 +364,7 @@ if conn:
         df = pd.read_sql(query, conn)
 
         if total_count > 0:
+<<<<<<< HEAD
             # 2. 상단 검색 결과 요약 바 (배경은 어둡게 고정하되 텍스트는 흰색으로 명시)
             st.markdown(f"""
                   <div style="
@@ -236,12 +376,28 @@ if conn:
                     margin-bottom: 0px;          /* 아래쪽 바깥 여백: 0으로 설정하여 다음 요소와 밀착 */
                     color: #FFFFFF;                 /* 글자 색상: 흰색 */
                   ">
+=======
+            st.markdown(f"""
+                <div style="
+                    background-color: #31333F;
+                    padding: 5px 10px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    margin-top: -25px;
+                    margin-bottom: 0px;
+                    color: #FFFFFF;
+                ">
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
                     ✅ <b>{selected_name}</b> 검색 결과: <b>{total_count:,}</b>건
                 </div>
             """, unsafe_allow_html=True)
     
+<<<<<<< HEAD
             # 3. 상품 리스트 출력
             for i, row in df.iterrows(): # i를 인덱스로 활용
+=======
+            for i, row in df.iterrows():
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
                 target_url = row['상품URL']
                 img_url = row['대표이미지URL'] if row.get('대표이미지URL') else ""
                 manufacturer = row.get('제조사', '-')
@@ -263,6 +419,7 @@ if conn:
                                 <h5 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: inherit; line-height: 1.2;">
                                     {row['상품명']}
                                 </h5>
+<<<<<<< HEAD
                             <div style="margin: 0px 0; font-size: 13.5px; display: flex; gap: 10px; opacity: 0.7;">
                                 <span style="color: inherit;">{brand}</span>
                                 <span style="color: gray;">|</span>
@@ -279,11 +436,30 @@ if conn:
             # 4. 더보기 버튼 (수정된 디자인 적용됨)
             if total_count > st.session_state.load_count:
                 # 텍스트에 이모지를 포함하면 이미지처럼 글자 길이에 맞춰 배경이 생깁니다.
+=======
+                                <div style="margin: 0px 0; font-size: 13.5px; display: flex; gap: 10px; opacity: 0.7;">
+                                    <span style="color: inherit;">{brand}</span>
+                                    <span style="color: gray;">|</span>
+                                    <span>{manufacturer}</span>
+                                </div>
+                                <p style="margin: 0; font-size: 13.5px; opacity: 0.7; color: inherit;">
+                                    {row['원산지']}
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                """, unsafe_allow_html=True)
+
+            if total_count > st.session_state.load_count:
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
                 if st.button(f"🔽 더보기 ({st.session_state.load_count}/{total_count:,}) "):
                     st.session_state.load_count += 100
                     st.rerun()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> fab7983df005b29a609c2e81703fc714a7d5d665
     except Exception as e:
         st.error(f"데이터 로드 오류: {e}")
     
