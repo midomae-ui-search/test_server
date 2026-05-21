@@ -1,51 +1,35 @@
 import os
 import requests
-import base64
 import sqlite3
 import pandas as pd
 import streamlit as st
 
 # =========================================================
-# [진짜 최종 완벽판] 비즈니스형 단축 링크 해독 직통 다운로드
+# [자동 업데이트] 비즈니스 원드라이브 보안 차단 우회 다운로드 로직
 # =========================================================
-# 알려드린 단어 조각들을 결합한 주소입니다. (끝에 ?download=1 같은 군더더기 없는 순수 주소여야 합니다!)
 ONEDRIVE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
 DB_FILE = '상품검색 V4.db' 
 
 def download_onedrive_db():
     try:
-        # 1. 1drv.ms 단축 링크 전체를 utf-8 바이트로 인코딩합니다.
-        data_bytes = ONEDRIVE_URL.encode("utf-8")
-        
-        # 2. 마이크로소프트 공식 API 스펙에 맞춰 base64로 암호화(인코딩)합니다.
-        base64_bytes = base64.b64encode(data_bytes)
-        base64_string = base64_bytes.decode("utf-8").replace("=", "").replace("/", "_").replace("+", "-")
-        
-        # 3. 비즈니스 계정 보안을 뚫어내는 우회 직통 다운로드 API 주소를 조립합니다.
-        direct_url = f"https://onedrive.com!{base64_string}/root/content"
-
-        # 4. 일반 브라우저로 속이는 보안 우회 헤더를 탑재하여 실제 파일을 다운로드합니다.
+        # 비즈니스 계정 보안 차단을 피하기 위한 브라우저 우회 헤더 설정
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
-        
-        response = requests.get(direct_url, headers=headers, stream=True)
+        response = requests.get(ONEDRIVE_URL, headers=headers, stream=True, allow_redirects=True)
         
         if response.status_code == 200:
             with open(DB_FILE, "wb") as f:
+                # 파일이 깨지거나 멈추지 않도록 블록 단위 안전 분할 다운로드
                 for chunk in response.iter_content(chunk_size=1024*1024):
                     if chunk:
                         f.write(chunk)
-            print("🎉 비즈니스 원드라이브 API 직통 동기화 성공!")
-        else:
-            print(f"다운로드 실패 (응답 코드): {response.status_code}")
+            print("🎉 원드라이브 보안 우회 최신 DB 연동 성공!")
     except Exception as e:
-        print(f"다운로드 오류 발생: {e}")
+        print(f"다운로드 중 치명적 오류 발생: {e}")
 
-# 앱 구동 시 무조건 동기화 트리거
+# 앱 시작 시 최신 DB 실시간 반영 작동
 download_onedrive_db()
-
-
 
 # =========================================================
 # 1. 페이지 설정 및 디자인 적용
@@ -97,7 +81,7 @@ st.markdown("""
         display: none !important;
     }
 
-    /* 버튼 위치 수직 중앙 맞춤 (괄호 누락 버그 수정 완료) */
+    /* 버튼 위치 수직 중앙 맞춤 */
     div[data-testid="stButton"] {
         margin-top: 0px !important;
         display: flex !important;
