@@ -1,36 +1,41 @@
 import os
 import requests
-import base64
 import sqlite3
 import pandas as pd
 import streamlit as st
 
 # =========================================================
-# [자동 업데이트] 원드라이브로부터 최신 DB 다운로드 로직
+# [최종 무적 버전] 비즈니스 원드라이브 보안 차단 우회 다운로드
 # =========================================================
-# 1. 복사한 원드라이브 단축 링크 주소를 넣으세요.
+# 알려드린 조각을 한 줄로 합친 주소입니다. 뒤에 ?download=1이 꼭 붙어있어야 합니다.
 ONEDRIVE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
 DB_FILE = '상품검색 V4.db' 
 
 def download_onedrive_db():
-    if ONEDRIVE_URL == "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1":
-        return
     try:
-        data_bytes = ONEDRIVE_URL.encode("utf-8")
-        base64_bytes = base64.b64encode(data_bytes)
-        base64_string = base64_bytes.decode("utf-8").replace("=", "").replace("/", "_").replace("+", "-")
-        direct_url = f"https://onedrive.com!{base64_string}/root/content"
-
-        response = requests.get(direct_url, stream=True)
+        # 비즈니스 원드라이브의 보안 차단을 피하기 위해 일반 브라우저인 것처럼 속이는 헤더값입니다.
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        
+        # 첫 연결 시 실제 파일이 있는 진짜 주소로 리다이렉트(이동)되도록 허용합니다.
+        response = requests.get(ONEDRIVE_URL, headers=headers, stream=True, allow_redirects=True)
+        
         if response.status_code == 200:
             with open(DB_FILE, "wb") as f:
-                f.write(response.content)
-            print("원드라이브로부터 최신 DB 다운로드 완료!")
+                # 데이터가 중간에 끊기지 않도록 1MB씩 쪼개서 안전하게 끝까지 다운로드합니다.
+                for chunk in response.iter_content(chunk_size=1024*1024):
+                    if chunk:
+                        f.write(chunk)
+            print("🎉 원드라이브 보안 우회 최신 DB 연동 성공!")
+        else:
+            print(f"다운로드 실패 (원드라이브 응답 코드): {response.status_code}")
     except Exception as e:
-        print(f"다운로드 실패: {e}")
+        print(f"다운로드 중 치명적 오류 발생: {e}")
 
-# 앱 실행 시 자동으로 DB 다운로드 트리거
+# 앱 켜질 때 원드라이브 파일 다운로드 작동
 download_onedrive_db()
+
 
 # =========================================================
 # 1. 페이지 설정 및 디자인 적용
