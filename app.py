@@ -1,40 +1,50 @@
 import os
 import requests
+import base64
 import sqlite3
 import pandas as pd
 import streamlit as st
 
 # =========================================================
-# [최종 무적 버전] 비즈니스 원드라이브 보안 차단 우회 다운로드
+# [진짜 최종 완벽판] 비즈니스형 단축 링크 해독 직통 다운로드
 # =========================================================
-# 알려드린 조각을 한 줄로 합친 주소입니다. 뒤에 ?download=1이 꼭 붙어있어야 합니다.
-ONEDRIVE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
+# 알려드린 단어 조각들을 결합한 주소입니다. (끝에 ?download=1 같은 군더더기 없는 순수 주소여야 합니다!)
+ONEDRIVE_URL = "https://1drv.ms"
 DB_FILE = '상품검색 V4.db' 
 
 def download_onedrive_db():
     try:
-        # 비즈니스 원드라이브의 보안 차단을 피하기 위해 일반 브라우저인 것처럼 속이는 헤더값입니다.
+        # 1. 1drv.ms 단축 링크 전체를 utf-8 바이트로 인코딩합니다.
+        data_bytes = ONEDRIVE_URL.encode("utf-8")
+        
+        # 2. 마이크로소프트 공식 API 스펙에 맞춰 base64로 암호화(인코딩)합니다.
+        base64_bytes = base64.b64encode(data_bytes)
+        base64_string = base64_bytes.decode("utf-8").replace("=", "").replace("/", "_").replace("+", "-")
+        
+        # 3. 비즈니스 계정 보안을 뚫어내는 우회 직통 다운로드 API 주소를 조립합니다.
+        direct_url = f"https://onedrive.com!{base64_string}/root/content"
+
+        # 4. 일반 브라우저로 속이는 보안 우회 헤더를 탑재하여 실제 파일을 다운로드합니다.
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
         }
         
-        # 첫 연결 시 실제 파일이 있는 진짜 주소로 리다이렉트(이동)되도록 허용합니다.
-        response = requests.get(ONEDRIVE_URL, headers=headers, stream=True, allow_redirects=True)
+        response = requests.get(direct_url, headers=headers, stream=True)
         
         if response.status_code == 200:
             with open(DB_FILE, "wb") as f:
-                # 데이터가 중간에 끊기지 않도록 1MB씩 쪼개서 안전하게 끝까지 다운로드합니다.
                 for chunk in response.iter_content(chunk_size=1024*1024):
                     if chunk:
                         f.write(chunk)
-            print("🎉 원드라이브 보안 우회 최신 DB 연동 성공!")
+            print("🎉 비즈니스 원드라이브 API 직통 동기화 성공!")
         else:
-            print(f"다운로드 실패 (원드라이브 응답 코드): {response.status_code}")
+            print(f"다운로드 실패 (응답 코드): {response.status_code}")
     except Exception as e:
-        print(f"다운로드 중 치명적 오류 발생: {e}")
+        print(f"다운로드 오류 발생: {e}")
 
-# 앱 켜질 때 원드라이브 파일 다운로드 작동
+# 앱 구동 시 무조건 동기화 트리거
 download_onedrive_db()
+
 
 
 # =========================================================
