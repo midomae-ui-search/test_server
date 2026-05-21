@@ -9,7 +9,7 @@ import streamlit as st
 # [진짜 최종 완벽판] 비즈니스형 단축 링크 해독 직통 다운로드
 # =========================================================
 # 알려드린 단어 조각들을 결합한 주소입니다. (끝에 ?download=1 같은 군더더기 없는 순수 주소여야 합니다!)
-ONEDRIVE_URL = "https://1drv.ms"
+ONEDRIVE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
 DB_FILE = '상품검색 V4.db' 
 
 def download_onedrive_db():
