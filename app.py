@@ -3,53 +3,56 @@ import requests
 import sqlite3
 import pandas as pd
 import streamlit as st
+import time  # 💡 [추가] 다운로드 강제 대기를 위한 타이머 라이브러리
 
 # =========================================================
-# [대용량 구글 드라이브 완벽 대응] 직통 다운로드 로직
+# [대용량 구글 드라이브 완벽 대응] 100MB 강제 대기형 다운로드 로직
 # =========================================================
-# ⚠️ 새로 바뀌신 구글 ID 조각이 완벽하게 반영되었습니다.
 GOOGLE_FILE_ID = "1kByUs9YEesqTgsHfUMfG021STpgNtPan"
 DB_FILE = '상품검색 V4.db'
 
 def download_google_db_perfect():
-    # 💡 [핵심] 만약 기존에 깨진 파일(용량이 너무 작은 껍데기 파일)이 남아있다면 
-    # 완전히 지워버려서 강제로 새로 다운로드받게 만듭니다.
+    # 만약 기존 파일이 존재하는데 50MB 미만으로 깨져있다면 삭제 후 다시 받습니다.
     if os.path.exists(DB_FILE):
-        if os.path.getsize(DB_FILE) < 1024 * 1024 * 50: # 50MB 미만인 경우 깨진 파일로 간주
+        if os.path.getsize(DB_FILE) < 1024 * 1024 * 50:
             os.remove(DB_FILE)
             
+    # 파일이 없을 때만 새롭게 구글 API 규격으로 전송받습니다.
     if not os.path.exists(DB_FILE):
         try:
-            # 💡 [질문하신 직통 주소] 이 모양 그대로 한 글자도 틀리지 않고 들어가 있어야 합니다!
-            direct_url = f"https://google.com{GOOGLE_FILE_ID}"
-            headers = {'User-Agent': 'Mozilla/5.0'}
-            
-            session = requests.Session()
-            response = session.get(direct_url, headers=headers, stream=True)
-            
-            confirm_token = None
-            for key, value in response.cookies.items():
-                if 'download_warning' in key:
-                    confirm_token = value
-                    break
-                    
-            if confirm_token:
-                direct_url = f"https://google.com{GOOGLE_FILE_ID}&confirm={confirm_token}"
+            with st.spinner("⏳ 서버가 구글 드라이브로부터 최신 데이터베이스(100MB)를 안전하게 받아오는 중입니다... 잠시만 기다려주세요."):
+                direct_url = f"https://google.com{GOOGLE_FILE_ID}"
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                
+                session = requests.Session()
                 response = session.get(direct_url, headers=headers, stream=True)
+                
+                confirm_token = None
+                for key, value in response.cookies.items():
+                    if 'download_warning' in key:
+                        confirm_token = value
+                        break
+                        
+                if confirm_token:
+                    direct_url = f"https://google.com{GOOGLE_FILE_ID}&confirm={confirm_token}"
+                    response = session.get(direct_url, headers=headers, stream=True)
 
-            if response.status_code == 200:
-                with open(DB_FILE, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=32768):
-                        if chunk:
-                            f.write(chunk)
-            print("🎉 구글 드라이브 100MB 깔끔하게 새로 다운로드 완료!")
+                if response.status_code == 200:
+                    with open(DB_FILE, "wb") as f:
+                        for chunk in response.iter_content(chunk_size=65536): # 속도 향상을 위해 청크 크기 최적화
+                            if chunk:
+                                f.write(chunk)
+                    
+                    # 💡 [핵심 안전장치] 100MB 파일이 하드디스크에 완전히 저장되어 안착할 때까지
+                    # 스트림릿 코드가 아래로 내려가지 못하도록 딱 15초 동안 강제로 프로그램을 멈춥니다.
+                    time.sleep(15) 
+                    st.success("🎉 최신 데이터베이스 동기화 완료! 이제 정상적으로 이용하실 수 있습니다.")
+                    st.rerun() # 다운로드 완료 후 화면 자동 새로고침
         except Exception as e:
-            print(f"다운로드 실패 원인: {e}")
+            st.error(f"다운로드 중 오류 발생: {e}")
 
-# 앱 실행 시 강제 작동
+# 앱 기동 시 자동 다운로드 로직 작동
 download_google_db_perfect()
-
-
 
 # =========================================================
 # 1. 페이지 설정 및 디자인 적용
@@ -58,7 +61,6 @@ st.set_page_config(page_title="상품 검색기", layout="wide")
 
 st.markdown("""
     <style>
-    /* 기본 설정 (헤더/푸터 숨김 등) */
     header, footer {visibility: hidden !important; display: none !important;}
     .stAppDeployButton, .viewerBadge_link__q6n6l, .viewerBadge_container__176p1, #MainMenu {
         display: none !important;
@@ -66,90 +68,30 @@ st.markdown("""
     [data-testid="stToolbar"] { display: none !important; }
     .stApp { margin-top: 0px !important; }
     
-    /* 메인 컨테이너 자체를 더 위로 끌어올림 */
-    [data-testid="stMainViewContainer"] {
-        margin-top: -60px !important;
-    }
+    [data-testid="stMainViewContainer"] { margin-top: -60px !important; }
+    .block-container { padding-top: 0rem !important; margin-top: -36px !important; padding-bottom: 0rem !important; }
+    h2 { margin-top: 0px !important; padding-top: 0px !important; }
 
-    /* 내부 콘텐츠 박스의 위쪽 여백을 강제로 '마이너스' 처리 */
-    .block-container { 
-        padding-top: 0rem !important; 
-        margin-top: -36px !important;
-        padding-bottom: 0rem !important; 
-    }
+    [data-testid="column"] { flex: 1 1 0% !important; min-width: 0px !important; padding-right: 5px !important; }
+    [data-testid="column"]:nth-of-type(1) { padding-right: 10px !important; }
+    div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label { display: none !important; }
+    div[data-testid="stButton"] { margin-top: 0px !important; display: flex !important; justify-content: center !important; }
+    .stButton button { width: auto !important; padding: 2px 10px !important; font-size: 12px !important; }
 
-    /* 제목의 기본 마진 제거 */
-    h2 {
-        margin-top: 0px !important;
-        padding-top: 0px !important;
-    }
-
-    /* 모바일 가로 배치 강제 및 여백 조정 */
-    [data-testid="column"] {
-        flex: 1 1 0% !important;
-        min-width: 0px !important;
-        padding-right: 5px !important;
-    }
-
-    /* 이미지와 텍스트 사이 간격 미세 조정 */
-    [data-testid="column"]:nth-of-type(1) {
-        padding-right: 10px !important;
-    }
-
-    /* 라벨 숨겨서 위쪽 여백 제거 */
-    div[data-testid="stSelectbox"] label, div[data-testid="stTextInput"] label {
-        display: none !important;
-    }
-
-    /* 버튼 위치 수직 중앙 맞춤 */
-    div[data-testid="stButton"] {
-        margin-top: 0px !important;
-        display: flex !important;
-        justify-content: center !important;
-    }
-
-    /* 버튼 크기 조절 */
-    .stButton button {
-        width: auto !important;
-        padding: 2px 10px !important;
-        font-size: 12px !important;
-    }
-
-    /* 초기화 X 버튼 (원형 고정) */
     div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #333333 !important;
-        color: white !important;
-        border-radius: 50% !important;
-        width: 40px !important;
-        height: 40px !important;
-        padding: 0 !important;
-        border: none !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        background-color: #333333 !important; color: white !important; border-radius: 50% !important;
+        width: 40px !important; height: 40px !important; padding: 0 !important; border: none !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
     }
 
-    /* 더보기 버튼 (타원형 고정) */
     div.stVerticalBlock > div.stButton > button {
-        background-color: #333333 !important; 
-        color: white !important;
-        border-radius: 20px !important;
-        width: auto !important;
-        padding: 8px 25px !important;
-        margin: 20px auto !important; 
-        display: flex !important;
-        border: 1px solid #464855 !important;
-        height: auto !important;
+        background-color: #333333 !important; color: white !important; border-radius: 20px !important;
+        width: auto !important; padding: 8px 25px !important; margin: 20px auto !important; 
+        display: flex !important; border: 1px solid #464855 !important; height: auto !important;
     }
 
-    /* 모든 버튼 공통 호버 효과 */
-    div.stButton > button:hover {
-        background-color: #000000 !important;
-        border-color: #ff4b4b !important;
-        color: white !important;
-    }
+    div.stButton > button:hover { background-color: #000000 !important; border-color: #ff4b4b !important; color: white !important; }
 
-    /* 위로 가기 버튼 스타일 */
     .top-btn { 
         position: fixed; bottom: 80px; right: 30px; z-index: 999; 
         background: white; border: 2px solid black; border-radius: 50%; 
@@ -161,13 +103,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 최상단 앵커 및 Top 버튼
 st.markdown('<div id="top"></div>', unsafe_allow_html=True)
 st.markdown('<a class="top-btn" href="#top">↑</a>', unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# [정보 설정] DB 및 테이블 정보
-# ---------------------------------------------------------
 TABLE_NAME = '"상품검색v4"' 
 
 def get_connection():
@@ -178,13 +116,12 @@ def get_connection():
         st.error(f"❌ DB 연결 실패: {e}")
         return None
 
-# 카테고리 매핑 데이터
 category_data = {
     "전체": "ALL", "국내배송": "CATE118", "국내배송 특가 ~70%": "CATE128", "현지오늘배송": "CATE119", "개런티": "CATE117", "H1": "CATE72", "H2": "CATE73", "H3": "CATE74", 
     "CC 넘버원": "CATE75", "CC 티무역": "CATE76", "CC 팬더": "CATE77", "CC 나비/기타": "CATE78", "CC 일반": "CATE80",
     "[고퀄]기타 브랜드": "CATE79", "PD": "CATE84", "LV": "CATE85", "CD": "CATE86", "CL": "CATE87", "GY": "CATE88", 
     "LP": "CATE89", "BV": "CATE90", "MIU": "CATE91", "YSL": "CATE92", "DV": "CATE93", "THE ROW": "CATE116", 
-    "GG": "CATE95", "FF": "CATE94", "BL": "CATE97", "BBR": "CATE98", "LW": "CATE100", "VT": "CATE99", "CHL": "CATE96", 
+    "GG": "CATE95", "FF": "CATE94", "BL": "CATE97", "BBR": "BBR", "LW": "CATE100", "VT": "CATE99", "CHL": "CATE96", 
     "BAOBAO": "CATE101", "기타브랜드": "CATE102", "여행구/캐리어": "CATE103", "여성 의류": "CATE47", "바람막이/경량": "CATE48", 
     "여성패딩(겨울용)": "CATE66", "코트/퍼/무스탕(겨울용)": "CATE129", "맨즈 의류": "CATE68", "맨즈 아우터": "CATE69", 
     "키즈의류": "CATE130", "키즈 아우터": "CATE131", "여성 신발": "CATE105", "[수공]H 신발": "CATE106", "[수공]CC 신발": "CATE107", 
@@ -194,7 +131,6 @@ category_data = {
     "맨즈 벨트/잡화": "CATE139"
 }
 
-# 타이틀 출력
 st.markdown("<h2 style='font-size: 24px; margin-bottom: -20px;'>🔍 상품 검색기</h2>", unsafe_allow_html=True)
 
 if "keyword_val" not in st.session_state:
@@ -203,7 +139,6 @@ if "keyword_val" not in st.session_state:
 def clear_search():
     st.session_state.keyword_val = ""
 
-# 검색 바 레이아웃 구성
 col_cat, col_keyword, col_clear = st.columns([1, 2.2, 0.5], gap="small")
 
 with col_cat:
@@ -216,7 +151,6 @@ with col_keyword:
 with col_clear:
     st.button("X", on_click=clear_search)
 
-# 상단 공지 배너
 st.markdown("""
     <div style="text-align: center; color: #ff4b4b; font-weight: bold; font-size: 17.5px;">
         ** 5/18 ~ 5/22 샤넬 브랜드 10% 할인 + 전품목 금액무관 카드결제 가능
@@ -225,7 +159,6 @@ st.markdown("""
 
 st.markdown("<hr style='margin-top: 16px; margin-bottom: 10px; opacity: 0.2;'>", unsafe_allow_html=True)
 
-# 데이터 검색 및 출력 로직
 conn = get_connection()
 if conn:
     if 'load_count' not in st.session_state:
