@@ -7,7 +7,7 @@ import streamlit as st
 # =========================================================
 # [구글 공식 API 규격] 대용량 경고창을 원천 차단하는 다운로드 로직
 # =========================================================
-GOOGLE_FILE_ID = "12k7n03GrI8EzNnXjQvX8gtyTCXhEnwrT"
+GOOGLE_FILE_ID = "1kByUs9YEesqTgsHfUMfG021STpgNtPan"
 DB_FILE = '상품검색 V4.db'
 
 def download_google_db_perfect():
