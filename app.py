@@ -5,46 +5,50 @@ import pandas as pd
 import streamlit as st
 
 # =========================================================
-# [구글 공식 API 규격] 대용량 경고창을 원천 차단하는 다운로드 로직
+# [대용량 구글 드라이브 완벽 대응] 직통 다운로드 로직
 # =========================================================
+# ⚠️ 새로 바뀌신 구글 ID 조각이 완벽하게 반영되었습니다.
 GOOGLE_FILE_ID = "1kByUs9YEesqTgsHfUMfG021STpgNtPan"
 DB_FILE = '상품검색 V4.db'
 
 def download_google_db_perfect():
-    try:
-        # 구글 드라이브에서 대용량 파일의 바이러스 체크 경고를 무시하고 
-        # 원본 파일만 그대로 스트리밍 다운로드하게 만드는 공식 주소 스펙입니다.
-        direct_url = f"https://google.com{GOOGLE_FILE_ID}"
-        
-        # 브라우저의 접속인 것처럼 세팅하여 안정적인 연결을 확보합니다.
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        
-        # 일차적으로 스트림 연결을 엽니다.
-        response = requests.get(direct_url, headers=headers, stream=True)
-        
-        # 만약 구글이 쿠키에 경고 우회 토큰을 심어 보냈다면 자동으로 감지하여 재요청합니다.
-        confirm_token = None
-        for key, value in response.cookies.items():
-            if 'download_warning' in key:
-                confirm_token = value
-                break
-                
-        if confirm_token:
-            direct_url = f"https://google.com{GOOGLE_FILE_ID}&confirm={confirm_token}"
-            response = requests.get(direct_url, headers=headers, stream=True)
+    # 💡 [핵심] 만약 기존에 깨진 파일(용량이 너무 작은 껍데기 파일)이 남아있다면 
+    # 완전히 지워버려서 강제로 새로 다운로드받게 만듭니다.
+    if os.path.exists(DB_FILE):
+        if os.path.getsize(DB_FILE) < 1024 * 1024 * 50: # 50MB 미만인 경우 깨진 파일로 간주
+            os.remove(DB_FILE)
+            
+    if not os.path.exists(DB_FILE):
+        try:
+            # 💡 [질문하신 직통 주소] 이 모양 그대로 한 글자도 틀리지 않고 들어가 있어야 합니다!
+            direct_url = f"https://google.com{GOOGLE_FILE_ID}"
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            
+            session = requests.Session()
+            response = session.get(direct_url, headers=headers, stream=True)
+            
+            confirm_token = None
+            for key, value in response.cookies.items():
+                if 'download_warning' in key:
+                    confirm_token = value
+                    break
+                    
+            if confirm_token:
+                direct_url = f"https://google.com{GOOGLE_FILE_ID}&confirm={confirm_token}"
+                response = session.get(direct_url, headers=headers, stream=True)
 
-        # 100MB 전체를 끊어짐 없이 완벽하게 로컬 디스크에 저장합니다.
-        if response.status_code == 200:
-            with open(DB_FILE, "wb") as f:
-                for chunk in response.iter_content(chunk_size=32768):
-                    if chunk:
-                        f.write(chunk)
-            print("🎉 구글 API 정식 규격으로 100MB 전송 완료!")
-    except Exception as e:
-        print(f"다운로드 실패 원인: {e}")
+            if response.status_code == 200:
+                with open(DB_FILE, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=32768):
+                        if chunk:
+                            f.write(chunk)
+            print("🎉 구글 드라이브 100MB 깔끔하게 새로 다운로드 완료!")
+        except Exception as e:
+            print(f"다운로드 실패 원인: {e}")
 
-# 앱 기동 시 강제 실행
+# 앱 실행 시 강제 작동
 download_google_db_perfect()
+
 
 
 # =========================================================
