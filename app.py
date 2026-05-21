@@ -5,31 +5,31 @@ import pandas as pd
 import streamlit as st
 
 # =========================================================
-# [자동 업데이트] 비즈니스 원드라이브 보안 차단 우회 다운로드 로직
+# [구글 드라이브 자동 연동] 보안 차단 없는 무적의 다운로드 로직
 # =========================================================
-ONEDRIVE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
-DB_FILE = '상품검색 V4.db' 
+# ⚠️ 아래 큰따옴표 안에 3단계에서 추출한 구글 파일 고유 ID를 붙여넣으세요!
+GOOGLE_FILE_ID = "12k7n03GrI8EzNnXjQvX8gtyTCXhEnwrT"
+DB_FILE = '상품검색 V4.db'
 
-def download_onedrive_db():
+def download_google_drive_db():
+    if GOOGLE_FILE_ID == "12k7n03GrI8EzNnXjQvX8gtyTCXhEnwrT":
+        return
     try:
-        # 비즈니스 계정 보안 차단을 피하기 위한 브라우저 우회 헤더 설정
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        response = requests.get(ONEDRIVE_URL, headers=headers, stream=True, allow_redirects=True)
+        # 구글 드라이브에서 외부 프로그램(스트림릿) 접속을 무조건 허용해주는 다운로드 주소 규격입니다.
+        direct_url = f"https://google.com{GOOGLE_FILE_ID}"
         
+        response = requests.get(direct_url, stream=True)
         if response.status_code == 200:
             with open(DB_FILE, "wb") as f:
-                # 파일이 깨지거나 멈추지 않도록 블록 단위 안전 분할 다운로드
                 for chunk in response.iter_content(chunk_size=1024*1024):
                     if chunk:
                         f.write(chunk)
-            print("🎉 원드라이브 보안 우회 최신 DB 연동 성공!")
+            print("🎉 구글 드라이브로부터 최신 DB 동기화 성공!")
     except Exception as e:
-        print(f"다운로드 중 치명적 오류 발생: {e}")
+        print(f"다운로드 실패: {e}")
 
-# 앱 시작 시 최신 DB 실시간 반영 작동
-download_onedrive_db()
+# 앱 실행 시 구글 드라이브 실시간 동기화 트리거
+download_google_drive_db()
 
 # =========================================================
 # 1. 페이지 설정 및 디자인 적용
