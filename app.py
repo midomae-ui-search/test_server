@@ -12,8 +12,13 @@ ZIP_FILE = '상품검색 V4.zip'
 # =========================================================
 def get_connection():
     try:
-        # 서버 디스크에 진짜 .db 파일이 아직 없다면, 
-        # 깃허브에 같이 올려둔 .zip 파일의 압축을 즉시 풀어서 생성합니다.
+        # 💡 [핵심 안전장치] 만약 디스크에 파일이 존재하더라도 
+        # 파일 크기가 너무 작다면(50MB 미만) 이전에 실패한 가짜 파일이므로 완전히 강제 삭제합니다.
+        if os.path.exists(DB_FILE):
+            if os.path.getsize(DB_FILE) < 1024 * 1024 * 50:
+                os.remove(DB_FILE)
+                
+        # 가짜 파일이 지워졌거나 파일이 없을 때만 깃허브의 정상 .zip 압축을 다시 풉니다.
         if not os.path.exists(DB_FILE) and os.path.exists(ZIP_FILE):
             with zipfile.ZipFile(ZIP_FILE, 'r') as zip_ref:
                 zip_ref.extractall('.')
