@@ -1,59 +1,28 @@
 import os
-import requests
 import sqlite3
+import zipfile  # 💡 [추가] 압축을 풀기 위한 파이썬 기본 내장 라이브러리
 import pandas as pd
 import streamlit as st
-import time
 
-# =========================================================
-# [최종 완벽판] 무한 루프 차단 및 구글 직통 고정 다운로드 로직
-# =========================================================
-GOOGLE_DIRECT_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
 DB_FILE = '상품검색 V4.db'
+ZIP_FILE = '상품검색 V4.zip'
 
-def download_large_google_drive_db():
+# =========================================================
+# [압축 우회 방식] 내장된 ZIP 파일 압축 해제 및 연결 로직
+# =========================================================
+def get_connection():
     try:
-        # 이미 50MB 이상의 정상 파일이 있다면 다운로드를 건너뛰어 무한 루프를 방지합니다.
-        if os.path.exists(DB_FILE) and os.path.getsize(DB_FILE) >= 1024 * 1024 * 50:
-            return
-
-        # 기존 파일이 존재하는데 50MB 미만으로 깨져있다면 삭제 후 다시 받습니다.
-        if os.path.exists(DB_FILE) and os.path.getsize(DB_FILE) < 1024 * 1024 * 50:
-            os.remove(DB_FILE)
+        # 서버 디스크에 진짜 .db 파일이 아직 없다면, 
+        # 깃허브에 같이 올려둔 .zip 파일의 압축을 즉시 풀어서 생성합니다.
+        if not os.path.exists(DB_FILE) and os.path.exists(ZIP_FILE):
+            with zipfile.ZipFile(ZIP_FILE, 'r') as zip_ref:
+                zip_ref.extractall('.')
                 
-        if not os.path.exists(DB_FILE):
-            with st.spinner("⏳ 대용량 데이터베이스를 구글 드라이브로부터 실시간 다운로드 중입니다... (최대 1분 소요)"):
-                session = requests.Session()
-                
-                # 1차 요청으로 대용량 다운로드 시 구글이 던지는 경고 쿠키 확인
-                response = session.get(GOOGLE_DIRECT_URL, stream=True)
-                
-                # 구글 대용량 보안 토큰(confirm) 자동 낚아채기
-                confirm_token = None
-                for key, value in response.cookies.items():
-                    if 'download_warning' in key:
-                        confirm_token = value
-                        break
-                        
-                # 2차 요청: 토큰을 실어서 100MB 본 파일을 차단 없이 강제 다운로드
-                if confirm_token:
-                    final_url = f"{GOOGLE_DIRECT_URL}&confirm={confirm_token}"
-                    response = session.get(final_url, stream=True)
-                
-                if response.status_code == 200:
-                    with open(DB_FILE, "wb") as f:
-                        for chunk in response.iter_content(chunk_size=1024*1024): 
-                            if chunk:
-                                f.write(chunk)
-                    
-                    time.sleep(10) # 100MB 파일 안전 저장을 위한 대기 시간 확보
-                    st.toast("🎉 데이터베이스 실시간 연동 성공!")
-                    st.rerun()
+        conn = sqlite3.connect(DB_FILE)
+        return conn
     except Exception as e:
-        st.error(f"다운로드 중 오류 발생: {e}")
-
-# 앱 기동 시 대용량 자동 동기화 작동
-download_large_google_drive_db()
+        st.error(f"❌ 데이터베이스 연결 실패: {e}")
+        return None
 
 # =========================================================
 # 1. 페이지 설정 및 디자인 적용
@@ -108,14 +77,6 @@ st.markdown('<div id="top"></div>', unsafe_allow_html=True)
 st.markdown('<a class="top-btn" href="#top">↑</a>', unsafe_allow_html=True)
 
 TABLE_NAME = '"상품검색v4"' 
-
-def get_connection():
-    try:
-        conn = sqlite3.connect(DB_FILE)
-        return conn
-    except Exception as e:
-        st.error(f"❌ DB 연결 실패: {e}")
-        return None
 
 category_data = {
     "전체": "ALL", "국내배송": "CATE118", "국내배송 특가 ~70%": "CATE128", "현지오늘배송": "CATE119", "개런티": "CATE117", "H1": "CATE72", "H2": "CATE73", "H3": "CATE74", 
@@ -184,8 +145,7 @@ if conn:
     
     try:
         count_query = f'SELECT COUNT(*) FROM {TABLE_NAME} {where_clause}'
-        # 💡 [핵심 교정 완료] 누락되었던 데이터프레임 인덱싱 코드 [0, 0]를 정확히 복구했습니다!
-        total_count = pd.read_sql(count_query, conn).iloc[0, 0]
+        total_count = pd.read_sql(count_query, conn).iloc[0, 0] # 💡 완벽 연동 복구 완료
 
         query = f'SELECT * FROM {TABLE_NAME} {where_clause} LIMIT {st.session_state.load_count}'
         df = pd.read_sql(query, conn)
