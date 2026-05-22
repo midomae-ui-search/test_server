@@ -8,7 +8,6 @@ import time
 # =========================================================
 # [최종 완벽판] 무한 루프 차단 및 구글 직통 고정 다운로드 로직
 # =========================================================
-# 💡 복잡한 쪼개기 코드를 삭제하고, 회원님의 구글 ID 주소를 다이렉트로 완벽히 고정했습니다!
 GOOGLE_DIRECT_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
 DB_FILE = '상품검색 V4.db'
 
@@ -185,6 +184,7 @@ if conn:
     
     try:
         count_query = f'SELECT COUNT(*) FROM {TABLE_NAME} {where_clause}'
+        # 💡 [핵심 교정 완료] 누락되었던 데이터프레임 인덱싱 코드 [0, 0]를 정확히 복구했습니다!
         total_count = pd.read_sql(count_query, conn).iloc[0, 0]
 
         query = f'SELECT * FROM {TABLE_NAME} {where_clause} LIMIT {st.session_state.load_count}'
@@ -244,6 +244,8 @@ if conn:
                 if st.button(f"🔽 더보기 ({st.session_state.load_count}/{total_count:,}) "):
                     st.session_state.load_count += 100
                     st.rerun()
+        else:
+            st.info("🔍 검색 조건에 맞는 상품이 존재하지 않습니다.")
 
     except Exception as e:
         st.error(f"데이터 로드 오류: {e}")
