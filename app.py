@@ -8,7 +8,7 @@ import time
 # =========================================================
 # [최종 완벽판] 무한 루프 차단형 구글 드라이브 실시간 연동 로직
 # =========================================================
-GOOGLE_SHARE_URL = "https://google.com"
+GOOGLE_SHARE_URL = "https://1drv.ms/u/c/3934cbd7854c5f54/IQSCet6sZmwSTbs-ZicHiqIzATw_qsbZj8qUXpo9-P62gLg?download=1"
 DB_FILE = '상품검색 V4.db'
 
 def download_large_google_drive_db():
